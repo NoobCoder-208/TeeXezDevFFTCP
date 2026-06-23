@@ -113,6 +113,7 @@ class Bot:
         self.insquad = None
         self.joining_team = False
         self.ids = []
+        self._stop_all = False
         self.Emotes = {
             'E1': 909050020, 'E2': 909050009, 'G18': 909038012, 'CGK': 909042008,
             'AK47': 909000063, 'MP40': 909000075, 'MP40V2': 909040010,
@@ -257,7 +258,8 @@ class Bot:
                     "[FFFFFF][00FFFF]/cut [FFFFFF]\u279c Tho\xe1t team\n"
                     "[FFFFFF][00FFFF]/all s7 [FFFFFF]\u279c B\u1eadt h\xe0nh \u0111\u1ed9ng all\n"
                     "[FFFFFF][00FFFF]/all rd s7 [FFFFFF]\u279c Random h\xe0nh \u0111\u1ed9ng all\n"
-                    "[FFFFFF][00FFFF]/share [FFA500]<uid>[FFFFFF] \u279c Y\xeau c\u1ea7u share \u0111\u1ed3\n\n"
+                    "[FFFFFF][00FFFF]/share [FFA500]<uid>[FFFFFF] \u279c Y\xeau c\u1ea7u share \u0111\u1ed3\n"
+                    "[FFFFFF][00FFFF]/dung [FFFFFF]\u279c D\u1eebng m\xfaa /all\n\n"
                     "[AAAAAA]--- TeeXez ---"
                 )
                 return
@@ -306,6 +308,7 @@ class Bot:
                 if not self.ids:
                     self._reply(msg.cid, msg.tp, "[B][c]Vui lòng dùng /js trước")
                     return
+                self._stop_all = False
                 cc = parts[1].upper()
                 if cc == "RD" and len(parts) >= 3 and parts[2].lower() == "s7":
                     threading.Thread(target=self._all_rd_s7, args=(msg.cid, msg.tp), daemon=True).start()
@@ -338,6 +341,10 @@ class Bot:
                     self._reply(msg.cid, msg.tp, "[B][c][00FF00]\u0110\xe3 g\u1eedi y\xeau c\u1ea7u share t\u1edbi %s!" % target_uid)
                 except Exception as e:
                     self._reply(msg.cid, msg.tp, "[B][c][FF0000]L\u1ed7i: %s" % str(e)[:50])
+                return
+            if text in ("/dung",):
+                self._stop_all = True
+                self._reply(msg.cid, msg.tp, "[B][c][FF0000]\u0110\xe3 d\u1eebng h\xe0nh \u0111\u1ed9ng!")
                 return
         except Exception as e:
             log.warning("Chat handler: %s | msg: %s", e, msg.message[:50] if msg.message else "")
@@ -380,7 +387,7 @@ class Bot:
         self.sock_online.sendall(self._gen.play_animation(914000002))
         emotes = list(self.Emotes.values())
         for emote in emotes:
-            if not self.running.is_set(): return
+            if not self.running.is_set() or self._stop_all: return
             self.sock_online.sendall(self._gen.play_emote(emote, self.ids))
             time.sleep(6.8)
         self._reply(cid, tp, "[B][c][00FF00]Ho\xe0n t\u1ea5t all s7!")
@@ -397,7 +404,7 @@ class Bot:
         total_ids = len(self.ids)
         idx = 0
         while idx < len(emotes):
-            if not self.running.is_set(): return
+            if not self.running.is_set() or self._stop_all: return
             batch = emotes[idx:idx + total_ids]
             for i, uid in enumerate(self.ids):
                 if i < len(batch):
