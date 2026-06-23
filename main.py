@@ -61,8 +61,11 @@ def extract_uid_fields(parsed):
     f5 = parsed.get("5")
     if isinstance(f5, dict):
         if "1" in f5: add(f5["1"])
-        for item in f5.get("6", []):
-            if isinstance(item, dict) and "1" in item: add(item["1"])
+        members = f5.get("6")
+        if isinstance(members, list):
+            for item in members:
+                if isinstance(item, dict) and "1" in item:
+                    add(item["1"])
     return uids
 
 def ChooseEmote(token, url):
@@ -172,6 +175,7 @@ class Bot:
         while self.running.is_set():
             try:
                 sock = socket.create_connection((self.chat_ip, int(self.chat_port)), timeout=15)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 sock.sendall(self.packet_auth)
                 if self.guild_id and self.guild_code:
                     sock.sendall(self._gen.join_channel(self.guild_id, self.guild_code, 1))
@@ -201,6 +205,7 @@ class Bot:
         while self.running.is_set():
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 sock.settimeout(30)
                 sock.connect((self.online_ip, int(self.online_port)))
                 sock.sendall(self.packet_auth)
@@ -251,7 +256,8 @@ class Bot:
                     "[FFFFFF][00FFFF]/js [FFA500]<teamcode>[FFFFFF] \u279c V\xe0o team b\u1eb1ng code\n"
                     "[FFFFFF][00FFFF]/cut [FFFFFF]\u279c Tho\xe1t team\n"
                     "[FFFFFF][00FFFF]/all s7 [FFFFFF]\u279c B\u1eadt h\xe0nh \u0111\u1ed9ng all\n"
-                    "[FFFFFF][00FFFF]/all rd s7 [FFFFFF]\u279c Random h\xe0nh \u0111\u1ed9ng all\n\n"
+                    "[FFFFFF][00FFFF]/all rd s7 [FFFFFF]\u279c Random h\xe0nh \u0111\u1ed9ng all\n"
+                    "[FFFFFF][00FFFF]/share [FFA500]<uid>[FFFFFF] \u279c Y\xeau c\u1ea7u share \u0111\u1ed3\n\n"
                     "[AAAAAA]--- TeeXez ---"
                 )
                 return
@@ -320,6 +326,19 @@ class Bot:
                 except Exception as e:
                     self._reply(msg.cid, msg.tp, "[B][c][FF0000]L%E1%BB%97i: %s" % str(e)[:50])
                 return
+            if text.startswith("/share"):
+                parts = text.split()
+                if len(parts) >= 2 and parts[1].isdigit():
+                    target_uid = int(parts[1])
+                else:
+                    target_uid = msg.uid
+                try:
+                    if self.sock_online and self._gen:
+                        self.sock_online.sendall(self._gen.ask_for_skin(target_uid))
+                    self._reply(msg.cid, msg.tp, "[B][c][00FF00]\u0110\xe3 g\u1eedi y\xeau c\u1ea7u share t\u1edbi %s!" % target_uid)
+                except Exception as e:
+                    self._reply(msg.cid, msg.tp, "[B][c][FF0000]L\u1ed7i: %s" % str(e)[:50])
+                return
         except Exception as e:
             log.warning("Chat handler: %s | msg: %s", e, msg.message[:50] if msg.message else "")
 
@@ -355,9 +374,10 @@ class Bot:
 
     def _all_s7(self, cid, tp):
         if not self.sock_online or not self._gen or not self.ids:
-            self._reply(cid, tp, "[B][c][FF0000]L%E1%BB%97i: ch\u01b0a c\xf3 UID ho\u1eb7c m\u1ea5t k\u1ebft n\u1ed1i")
+            self._reply(cid, tp, "[B][c][FF0000]L%E1%BB%97i: ch%01B0a c\xf3 UID ho\u1eb7c m\u1ea5t k\u1ebft n\u1ed1i")
             return
         self._reply(cid, tp, "[B][c][FFFF00]\u0110ang b\u1eadt h\xe0nh \u0111\u1ed9ng all s7...")
+        self.sock_online.sendall(self._gen.play_animation(914000002))
         emotes = list(self.Emotes.values())
         for emote in emotes:
             if not self.running.is_set(): return
@@ -368,9 +388,10 @@ class Bot:
 
     def _all_rd_s7(self, cid, tp):
         if not self.sock_online or not self._gen or not self.ids:
-            self._reply(cid, tp, "[B][c][FF0000]L%E1%BB%97i: ch\u01b0a c\xf3 UID ho\u1eb7c m\u1ea5t k\u1ebft n\u1ed1i")
+            self._reply(cid, tp, "[B][c][FF0000]L%E1%BB%97i: ch%01B0a c\xf3 UID ho\u1eb7c m\u1ea5t k\u1ebft n\u1ed1i")
             return
         self._reply(cid, tp, "[B][c][FFFF00]\u0110ang b\u1eadt random s7...")
+        self.sock_online.sendall(self._gen.play_animation(914000002))
         emotes = list(self.Emotes.values())
         random.shuffle(emotes)
         total_ids = len(self.ids)
@@ -402,12 +423,13 @@ class Bot:
                 if squad_owner and code:
                     try:
                         self.joining_team = True
-                        self.sock_online.sendall(self._gen.request_join_squad(int(squad_owner)))
-                        time.sleep(0.3)
                         self.sock_online.sendall(self._gen.join_squad_recruit(int(squad_owner), str(code)))
                         time.sleep(1.5)
                         self.insquad = True
-                        log.info("Auto-accepted invite from %s", squad_owner)
+                        uid_int = int(squad_owner)
+                        if uid_int not in self.ids:
+                            self.ids.append(uid_int)
+                        log.info("Auto-accepted invite from %s | ids: %s", squad_owner, self.ids)
                     except:
                         pass
                     finally:
@@ -416,11 +438,15 @@ class Bot:
         # Collect UIDs khi đang trong squad
         if self.insquad is not None:
             f4 = parsed.get("4")
-            if isinstance(f4, (int, str)) and int(f4) in (3, 6, 8, 44, 56):
-                new = extract_uid_fields(parsed)
-                if new:
-                    self.ids.extend(new)
-                    log.info("Collected UIDs: %s", new)
+            if isinstance(f4, (int, str)):
+                log.info("0500 f4=%s ids=%s", f4, self.ids)
+                if int(f4) in (3, 6, 8, 44, 56):
+                    new = extract_uid_fields(parsed)
+                    if new:
+                        for uid in new:
+                            if uid not in self.ids:
+                                self.ids.append(uid)
+                        log.info("Collected UIDs: %s", new)
 
 def main():
     uid, token = read_config()

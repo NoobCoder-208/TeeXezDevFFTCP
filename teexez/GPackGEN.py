@@ -149,3 +149,10 @@ class GPackGEN:
         fields[2][1] = {}
         fields[2][1][1] = int(aid)
         return self._build(list(fields.items()))
+
+    def ask_for_skin(self, uid):
+        fields = {}
+        fields[0] = 5
+        fields[1] = 77
+        fields[2] = {1: int(uid), 2: self.account_id}
+        return self._build(list(fields.items()))
