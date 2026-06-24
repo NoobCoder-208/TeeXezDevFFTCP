@@ -331,16 +331,15 @@ class Bot:
                 return
             if text.startswith("/share"):
                 parts = text.split()
-                if len(parts) >= 2 and parts[1].isdigit():
-                    target_uid = int(parts[1])
-                else:
-                    target_uid = msg.uid
+                target_uid = int(parts[1]) if len(parts) >= 2 and parts[1].isdigit() else msg.uid
+                if not self.sock_online or not self._gen:
+                    self._reply(msg.cid, msg.tp, "[B][c][FF0000]L%E1%BB%97i k%E1%BA%BFt n%E1%BB%91i")
+                    return
                 try:
-                    if self.sock_online and self._gen:
-                        self.sock_online.sendall(self._gen.ask_for_skin(target_uid))
-                    self._reply(msg.cid, msg.tp, "[B][c][00FF00]\u0110\xe3 g\u1eedi y\xeau c\u1ea7u share t\u1edbi %s!" % target_uid)
+                    self.sock_online.sendall(self._gen.ask_for_skin(target_uid))
+                    self._reply(msg.cid, msg.tp, "[B][c][00FF00]%s" % target_uid)
                 except Exception as e:
-                    self._reply(msg.cid, msg.tp, "[B][c][FF0000]L\u1ed7i: %s" % str(e)[:50])
+                    self._reply(msg.cid, msg.tp, "[B][c][FF0000]L%E1%BB%97i: %s" % str(e)[:50])
                 return
             if text in ("/dung",):
                 self._stop_all = True
@@ -438,6 +437,8 @@ class Bot:
                             self.ids.append(uid_int)
                         if self.sock_chat:
                             self.sock_chat.sendall(self._gen.join_channel(uid_int, str(code), None))
+                            time.sleep(0.5)
+                            self.sock_chat.sendall(self._gen.send_message("[B][C][00FF00]Chào các em [FFFF00]Anh TeeXez [FFA500]tới chơi", None, uid_int))
                         log.info("Auto-accepted invite from %s | ids: %s", squad_owner, self.ids)
                     except:
                         pass
@@ -460,6 +461,7 @@ class Bot:
                             if rc:
                                 for uid in new:
                                     self.sock_chat.sendall(self._gen.join_channel(uid, str(rc), None))
+                                    self.sock_chat.sendall(self._gen.send_message("[B][C][00FF00]Chào các em [FFFF00]Anh TeeXez [FFA500]tới chơi", None, uid))
                         log.info("Collected UIDs: %s", new)
 
 def main():

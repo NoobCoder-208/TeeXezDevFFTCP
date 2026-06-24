@@ -14,7 +14,11 @@ class GPackGEN:
         self.client_version = jsdata["ClientVersion"]
 
         sv_map = {s["2"].upper(): s["1"] for s in logindata["19"]}
-        self.region_code = "%02X" % sv_map[self.account_region.upper()]
+        try:
+            code = sv_map.get(self.account_region.upper(), 0)
+            self.region_code = "%02X" % int(code)
+        except:
+            self.region_code = "00"
 
     def _build(self, fields):
         payload = AES_CBC128(pb_encode(dict(fields[1:])), self.key, self.iv).hex()
