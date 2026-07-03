@@ -7,7 +7,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[logging.FileHandler("bot.log"), logging.StreamHandler()]
 )
-log = logging.getLogger("TxTCP")
+log = logging.getLogger("TeeXezDevTCP")
 
 def read_config():
     with open("bot.txt") as f:

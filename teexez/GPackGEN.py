@@ -160,3 +160,6 @@ class GPackGEN:
         fields[1] = 77
         fields[2] = {1: int(uid), 2: self.account_id}
         return self._build(list(fields.items()))
+# Details: FreeFire squad packet builder for chat, squad, emote, and animation commands
+# Key functions include send_message, join_channel, leave_channel, open_squad, invite_squad, 
+# leave_squad, join_squad, play_emote, request_join_squad, join_squad_recruit, play_animation, ask_for_skin
