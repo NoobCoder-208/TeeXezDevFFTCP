@@ -1,18 +1,16 @@
-# TxTCP
+# TeeXezDevTCP
 
 FreeFire TCP Bot — chat + squad + actions over TCP socket.
 
 ## Project Structure
 
 ```
-TxTCP/
-├── main.py            # Bot chính: auth, chat handler, squad logic, 0500 packet handler
-├── api.md             # Like API documentation
-├── bot.txt            # Config: {"uid": "token"} (gitignored)
-├── bot.log            # Log file (gitignored)
+.
+├── main.py                # Bot main: auth, chat handler, squad logic, 0500 packet handler
+├── api.md                 # Like API documentation
 └── teexez/
-    ├── ReQAPI.py      # Garena auth, protobuf parser/encoder, AES-CBC128
-    └── GPackGEN.py    # Game packet builder (chat, squad, emote, animation)
+    ├── ReQAPI.py          # Garena auth, protobuf parser/encoder, AES-CBC128
+    └── GPackGEN.py        # Game packet builder (chat, squad, emote, animation)
 ```
 
 ## Bot Flow
